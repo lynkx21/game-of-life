@@ -1,5 +1,5 @@
 # Conway's Game of Life
-An easy and unoptimized implementation in Rust of the Conway's Game of Life
+An easy and unoptimized implementation in Rust of the Conway's Game of Life.
 
 ## Building from source
 - Install SDL libraries: on Debian-like system it can be achieved with the following:

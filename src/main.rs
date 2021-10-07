@@ -13,7 +13,7 @@ use std::path::Path;
 
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
-const CELL_SIZE: u32 = 10;
+const CELL_SIZE: u32 = 5;
 const GRID_WIDTH: u32 = SCREEN_WIDTH / CELL_SIZE;
 const GRID_HEIGHT: u32 = SCREEN_HEIGHT / CELL_SIZE;
 const ALIVE_COLOR: Color = Color::WHITE;
@@ -167,6 +167,9 @@ pub fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut last_perf_counter = timer_subsystem.performance_counter();
+    let mut deltatime = 0f32;
+    let update_waiting_time = 0.05f32;
+    let mut next_update_waiting_time = update_waiting_time;
     let mut toggle_fps = false;
     let mut toggle_play = false;
 
@@ -204,7 +207,12 @@ pub fn main() {
 
         // Cell grid update
         if toggle_play {
-            grid.update();
+            next_update_waiting_time -= deltatime;
+            if next_update_waiting_time < 0.0 {
+                grid.update();
+                next_update_waiting_time = update_waiting_time;
+            }
+            
         }
 
         // Render
@@ -216,7 +224,8 @@ pub fn main() {
         // FPS calculations
         let end_perf_counter = timer_subsystem.performance_counter();
         let perf_counter_elapsed = end_perf_counter - last_perf_counter;
-        let mspf = 1_000f32 * perf_counter_elapsed as f32 / perf_freq as f32;
+        deltatime = perf_counter_elapsed as f32 / perf_freq as f32;
+        let mspf = 1_000f32 * deltatime;
         let fps = perf_freq as f32 / perf_counter_elapsed as f32;
         last_perf_counter = end_perf_counter;
         if toggle_fps {
