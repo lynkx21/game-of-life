@@ -13,5 +13,6 @@ An easy and unoptimized implementation in Rust of the Conway's Game of Life
 To build, simply run ```cargo run``` in the main folder.
 
 ## Commands
+- ```Space```: toggle play/pause
 - ```R```: reset
 - ```F3```: toggle FPS counter
