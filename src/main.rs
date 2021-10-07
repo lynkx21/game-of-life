@@ -9,9 +9,59 @@ use sdl2::rect::Rect;
 use sdl2::render::{Canvas, Texture, TextureCreator, TextureQuery};
 use sdl2::video::{Window, WindowContext};
 use std::path::Path;
+use rand::Rng;
 
-const SCREEN_WIDTH:  u32 = 800;
-const SCREEN_HEIGHT: u32 = 600;
+const SCREEN_WIDTH:   u32 = 800;
+const SCREEN_HEIGHT:  u32 = 600;
+const VIRTUAL_WIDTH:  u32 = 40;
+const VIRTUAL_HEIGHT: u32 = 30;
+const CELL_SIZE:      u32 = 20;
+const ALIVE_COLOR: Color = Color::WHITE;
+// const DEAD_COLOR:  Color = Color::BLACK;
+
+#[derive(Debug)]
+struct Grid {
+    tiles: [[u8; VIRTUAL_HEIGHT as usize]; VIRTUAL_WIDTH as usize],
+    n_rows: usize,
+    n_cols: usize,
+}
+
+impl Grid {
+    fn new() -> Grid {
+        const N_ROWS: usize = VIRTUAL_WIDTH as usize;
+        const N_COLS: usize = VIRTUAL_HEIGHT as usize;
+        let tiles = [[0u8; N_COLS]; N_ROWS];
+        Grid { tiles, n_rows: N_ROWS, n_cols: N_COLS }
+    }
+
+    fn reset(&mut self) {
+        for i in 0..self.n_rows {
+            for j in 0..self.n_cols {
+                let cell_status: u8 = rand::thread_rng().gen_range(0..=1);
+                self.tiles[i][j] = cell_status;
+            }
+        }
+    }
+
+    fn render(&self, canvas: &mut Canvas<Window>) {
+        let mut cells: Vec<Rect> = vec![];
+        for i in 0..self.n_rows {
+            for j in 0..self.n_cols {
+                if let 1 = self.tiles[i][j] {
+                    let cell = Rect::new(
+                        i as i32 * CELL_SIZE as i32,
+                        j as i32 * CELL_SIZE as i32,
+                        CELL_SIZE,
+                        CELL_SIZE
+                    );
+                    cells.push(cell);
+                }
+            }
+        }
+        canvas.set_draw_color(ALIVE_COLOR);
+        canvas.fill_rects(&cells).unwrap();
+    }
+}
 
 fn create_window(video_subsystem: &VideoSubsystem, title: &str) -> Window {
     video_subsystem.window(title, SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -25,6 +75,20 @@ fn create_canvas(window: Window) -> Canvas<Window> {
         .present_vsync()
         .build()
         .unwrap()
+}
+
+fn show_fps<'a>(texture_creator: &'a TextureCreator<WindowContext>, font_fps: &Font, mspf: f32, fps: f32) -> (Texture<'a>, Rect) {
+    let fps_string = format!("ms/f: {:.3}, fps: {:.3}", mspf, fps);
+    let surface = font_fps
+        .render(&fps_string)
+        .blended(Color::GREEN)
+        .unwrap();
+    let texture = texture_creator
+        .create_texture_from_surface(&surface)
+        .unwrap();
+    let TextureQuery { width, height, .. } = texture.query();
+    let texture_rect = Rect::new((SCREEN_WIDTH - width) as i32, 0, width, height);
+    (texture, texture_rect)
 }
 
 pub fn main() {
@@ -43,6 +107,10 @@ pub fn main() {
     // Font bindings
     let font_path = Path::new("./src/fonts/MesloLGS NF Regular.ttf");
     let font_fps = ttf_context.load_font(font_path, 14).unwrap();
+
+    // Cell grid
+    let mut grid = Grid::new();
+    grid.reset();
 
     canvas.set_draw_color(Color::BLACK);
     canvas.clear();
@@ -63,7 +131,7 @@ pub fn main() {
                     toggle_fps = !toggle_fps;
                 },
                 Event::KeyDown { keycode: Some(Keycode::R), .. } => {
-                    println!("Reset");
+                    grid.reset();
                 }
                 _ => {},
             }
@@ -71,6 +139,8 @@ pub fn main() {
 
         canvas.set_draw_color(Color::BLACK);
         canvas.clear();
+
+        grid.render(&mut canvas);
 
         // FPS CALCULATIONS
         let end_perf_counter = timer_subsystem.performance_counter();
@@ -80,6 +150,8 @@ pub fn main() {
         last_perf_counter = end_perf_counter;
         if toggle_fps {
             let (fps_texture, fps_rect) = show_fps(&texture_creator, &font_fps, mspf, fps);
+            canvas.set_draw_color(Color::BLACK);
+            canvas.fill_rect(fps_rect).unwrap();
             canvas.copy(&fps_texture, None, Some(fps_rect)).unwrap(); // FONT STUFF
         }
 
@@ -87,18 +159,4 @@ pub fn main() {
 
 
     } // 'running loop
-}
-
-fn show_fps<'a>(texture_creator: &'a TextureCreator<WindowContext>, font_fps: &Font, mspf: f32, fps: f32) -> (Texture<'a>, Rect) {
-    let fps_string = format!("ms/f: {:.3}, fps: {:.3}", mspf, fps);
-    let surface = font_fps
-        .render(&fps_string)
-        .blended(Color::GREEN)
-        .unwrap();
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .unwrap();
-    let TextureQuery { width, height, .. } = texture.query();
-    let texture_rect = Rect::new((SCREEN_WIDTH - width) as i32, 0, width, height);
-    (texture, texture_rect)
 }
