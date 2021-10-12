@@ -11,9 +11,9 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::VideoSubsystem;
 use std::path::Path;
 
-const SCREEN_WIDTH: u32 = 800;
-const SCREEN_HEIGHT: u32 = 600;
-const CELL_SIZE: u32 = 5;
+const SCREEN_WIDTH: u32 = 1000;
+const SCREEN_HEIGHT: u32 = 800;
+const CELL_SIZE: u32 = 4;
 const GRID_WIDTH: u32 = SCREEN_WIDTH / CELL_SIZE;
 const GRID_HEIGHT: u32 = SCREEN_HEIGHT / CELL_SIZE;
 const ALIVE_COLOR: Color = Color::WHITE;
@@ -130,7 +130,7 @@ fn show_fps<'a>(
     mspf: f32,
     fps: f32,
 ) -> (Texture<'a>, Rect) {
-    let fps_string = format!("ms/f: {:.3}, fps: {:.3}", mspf, fps);
+    let fps_string = format!("ms/f: {:7.3}, fps: {:7.3}", mspf, fps);
     let surface = font_fps.render(&fps_string).blended(Color::GREEN).unwrap();
     let texture = texture_creator
         .create_texture_from_surface(&surface)
